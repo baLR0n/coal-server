@@ -9,6 +9,9 @@ namespace COAL.CORE.Models
         [BsonElement("player_id")]
         public string PlayerId { get; set; }
 
+        [BsonElement("database_position")]
+        public int DatabasePosition { get; set; }
+
         [BsonElement("source_id")]
         public string SourceId { get; set; }
 
