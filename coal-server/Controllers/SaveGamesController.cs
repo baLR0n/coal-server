@@ -25,6 +25,11 @@ namespace coal_server.Controllers
         [HttpGet]
         public ActionResult<List<SaveGame>> Get() => this.saveGameService.Get();
 
+        /// <summary>
+        /// Loads a specified save game.
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         [HttpGet("load/{id}")]
         public async Task<ActionResult<SaveGame>> LoadAsync(string id)
         {
@@ -34,12 +39,16 @@ namespace coal_server.Controllers
                 return NotFound();
             }
 
-            await this.saveGameService.LoadAsync(id);
+            await this.saveGameService.LoadAsync(saveGame);
 
             // ToDo: Refresh services
             return Ok(saveGame);
         }
 
+        /// <summary>
+        /// Simluates the current day.
+        /// </summary>
+        /// <returns></returns>
         [HttpGet("simulate")]
         public async Task<ActionResult<DateTime>> SimulateDay()
         {
@@ -49,6 +58,11 @@ namespace coal_server.Controllers
         }
 
         // GET api/saveGames/5
+        /// <summary>
+        /// Gets a specified save game
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         [HttpGet("{id}", Name = "GetSaveGame")]
         public ActionResult<SaveGame> Get(string id)
         {
@@ -62,6 +76,11 @@ namespace coal_server.Controllers
         }
 
         // POST api/saveGames
+        /// <summary>
+        /// Creates a new save game.
+        /// </summary>
+        /// <param name="saveGame"></param>
+        /// <returns></returns>
         [HttpPost]
         public async Task<ActionResult<SaveGame>> CreateAsync(SaveGame saveGame)
         {

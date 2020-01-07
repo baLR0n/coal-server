@@ -16,7 +16,7 @@ namespace COAL.CORE.Models.Team
         public string PlayerId { get; set; }
 
         [BsonElement("valid_team_ids")]
-        public List<int> ValidTeamIds { get; set; }
+        public List<string> ValidTeamIds { get; set; }
 
         [BsonElement("start_date")]
         public DateTime StartDate { get; set; }

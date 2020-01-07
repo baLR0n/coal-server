@@ -9,18 +9,15 @@ namespace COAL.CORE.Models
         [BsonElement("player_id")]
         public string PlayerId { get; set; }
 
-        [BsonElement("database_position")]
-        public int DatabasePosition { get; set; }
-
-        [BsonElement("source_id")]
-        public string SourceId { get; set; }
-
         // Player meta data
-        [BsonElement("first_name")]
-        public string FirstName { get; set; }
+        [BsonElement("name")]
+        public string Name { get; set; }
 
-        [BsonElement("last_name")]
-        public string LastName { get; set; }
+        [BsonElement("shirt_name")]
+        public string ShirtName { get; set; }
+
+        [BsonElement("shirt_number")]
+        public int ShirtNumber { get; set; }
 
         [BsonElement("birthday")]
         public DateTime Birthday { get; set; }

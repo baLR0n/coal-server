@@ -32,6 +32,7 @@ namespace coal_server
 
             services.AddSingleton<SaveGameService>();
             services.AddSingleton<PlayerService>();
+            services.AddSingleton<ClubService>();
             services.AddSingleton<TeamService>();
             services.AddSingleton<CompetitionService>();
             services.AddSingleton<TableService>();

@@ -57,7 +57,7 @@ namespace coal_server.Controllers
 
         // PUT api/players/5
         [HttpPut("{id}")]
-        public IActionResult Update(string id, Player playerIn)
+        public async Task<IActionResult> Update(string id, Player playerIn)
         {
             Player player = this.playerService.Get(id);
 
@@ -66,7 +66,7 @@ namespace coal_server.Controllers
                 return NotFound();
             }
 
-            this.playerService.Update(id, playerIn);
+            await this.playerService.UpdateAsync(id, playerIn);
             return NoContent();
         }
 

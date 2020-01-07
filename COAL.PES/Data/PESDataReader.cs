@@ -1,5 +1,6 @@
 ﻿using COAL.CORE.Core.Enums;
 using COAL.CORE.Models;
+using COAL.CORE.Models.Competition;
 using COAL.CORE.Models.Team;
 using COAL.PES.Models;
 using ICSharpCode.SharpZipLib.Zip.Compression;
@@ -20,6 +21,15 @@ namespace COAL.PES.Data
         private static string teamsPath = "/Team.bin";
         private static int teamsBlock = 1468;
 
+        private static string playerAssignmentPath = "/PlayerAssignment.bin";
+        private static int playerAssignmentBlock = 16;
+
+        private static string competitionsPath = "/Competition.bin";
+        private static int competitionsBlock = 36;
+
+        private static string competitionEntryPath = "/CompetitionEntry.bin";
+        private static int competitionEntryBlock = 12;
+        
 
         public SupportedGames Game { get; set; } = SupportedGames.PES_2019;
 
@@ -169,8 +179,8 @@ namespace COAL.PES.Data
             int index;
             int length = Convert.ToInt32(reader.BaseStream.Length / teamsBlock);
 
-            reader.BaseStream.Position = 0;
-            string all = System.Text.Encoding.UTF8.GetString(reader.ReadBytes(1468));
+            //reader.BaseStream.Position = 0;
+            //string one = System.Text.Encoding.UTF8.GetString(reader.ReadBytes(teamsBlock));
 
             List<PESTeam> tempList = new List<PESTeam>();
 
@@ -205,14 +215,202 @@ namespace COAL.PES.Data
                     Id = idXparent,
                     StadiumId = stadium16,
                     FeederTeamId = feeder,
-                    Name = english
+                    Name = english,
+                    National = (uint)(idXparent < 100 ? 1 : 0), // ToDo: (checks << 7) >> 26,
+                    CountryId = (checks << 23) >> 23
                 };
 
                 tempList.Add(team);
             }
 
-            //return await TeamConverter.ConvertMany(tempList);
-            return null;
+            return await ClubConverter.ConvertMany(tempList);
+        }
+
+        /// <summary>
+        /// Read all player assignments from the PES database.
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        public async Task<List<TeamAssignment>> ReadPlayerAssignmentsAsync(string path)
+        {
+            MemoryStream memory = await this.CreateMemoryStreamAsync(path + playerAssignmentPath);
+
+            var reader = new BinaryReader(memory);
+
+            int index;
+            int length = Convert.ToInt32(reader.BaseStream.Length / playerAssignmentBlock);
+
+            reader.BaseStream.Position = 0;
+            string all = System.Text.Encoding.UTF8.GetString(reader.ReadBytes(playerAssignmentBlock));
+
+            List<TeamAssignment> tempList = new List<TeamAssignment>();
+
+            reader.BaseStream.Position = 0;
+            for (int i = 0; i < length; i++)
+            {
+                index = (i * playerAssignmentBlock);
+                reader.BaseStream.Position = index;
+
+                uint entryId = reader.ReadUInt32();
+                uint playerId = reader.ReadUInt32();
+                uint teamId = reader.ReadUInt32();
+                int number = (int)reader.ReadByte() + 1;
+
+                UInt16 checks = reader.ReadUInt16();
+                UInt32 isCaptain = (ushort)(checks << 4);
+                isCaptain = isCaptain >> 15;
+                UInt32 isPenalty = (ushort)(checks << 5);
+                isPenalty = isPenalty >> 15;
+                UInt32 isLongFk = (ushort)(checks << 6);
+                isLongFk = isLongFk >> 15;
+                UInt32 isLeftCorner = (ushort)(checks << 7);
+                isLeftCorner = isLeftCorner >> 15;
+                UInt32 isShortFk = (ushort)(checks << 8);
+                isShortFk = isShortFk >> 15;
+                UInt32 isRightCorner = (ushort)(checks << 9);
+                isRightCorner = isRightCorner >> 15;
+                UInt16 order = (ushort)(checks << 10);
+                order = (ushort) (order >> 10);
+
+                TeamAssignment teamAssignment = new TeamAssignment()
+                {
+                    PlayerId = playerId.ToString(),
+                    TeamId = teamId.ToString(),
+                    IsCaptain = isCaptain > 0,
+                    ShirtNumber = number,
+                    IsPenaltyTaker = isPenalty > 0,
+                    IsLongFreekickTaker = isLongFk > 0,
+                    IsLeftCornerTaker = isLeftCorner > 0,
+                    IsRightCornerTaker = isRightCorner > 0,
+                    IsLeftShortFreekickTaker = isShortFk > 0,
+                    IsRightShortFreekickTaker = isShortFk > 0
+                };
+
+                tempList.Add(teamAssignment);
+            }
+
+            // ToDo: ApplyTeamAssignments in MongoDB -> 
+            // Club -> First team
+            // low rated players -> Reserves
+            // Generate rest.
+            return tempList;
+        }
+
+        /// <summary>
+        /// Read all competitions from the PES database.
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        public async Task<List<Competition>> ReadCompetitionsAsync(string path)
+        {
+            MemoryStream memory = await this.CreateMemoryStreamAsync(path + competitionsPath);
+
+            var reader = new BinaryReader(memory);
+
+            int index;
+            int length = Convert.ToInt32(reader.BaseStream.Length / competitionsBlock);
+
+            reader.BaseStream.Position = 0;
+            string all = System.Text.Encoding.UTF8.GetString(reader.ReadBytes(2952));
+
+
+            List<PESCompetition> tempList = new List<PESCompetition>();
+
+            for (int i = 0; i < length; i++)
+            {
+                index = (i * competitionsBlock);
+                reader.BaseStream.Position = index;
+
+                uint check = reader.ReadUInt32();
+                //int check2 = (int)reader.ReadByte();
+                //int check3 = (int)reader.ReadByte();
+
+                reader.BaseStream.Position = index + 8;
+                string name = System.Text.Encoding.UTF8.GetString(reader.ReadBytes(28)).TrimEnd('\0');
+
+                uint id = (check << 17) >> 25; // id
+                uint region = (check << 11) >> 27; // region
+                uint test = check >> 31;
+                uint test1 = (check << 2) >> 31;
+                uint test2 = (check << 10) >> 27; // ?
+                uint test3 = (check << 9) >> 27;
+                uint test4 = (check << 8) >> 30;
+                uint test5 = (check << 7) >> 31; // ?
+                uint test6 = (check << 6) >> 31; // ?
+                uint test7 = (check << 5) >> 31; // ?
+                uint test8 = (check << 4) >> 31;
+                uint test9 = (check << 3) >> 31;
+                uint test10 = (check << 11) >> 26;
+                uint test13 = (check << 24) >> 24;
+
+
+                PESCompetition comp = new PESCompetition()
+                {
+                    Id = id,
+                    Name = name,
+                    Position = index,
+                    RegionId = region
+                };
+
+                tempList.Add(comp);
+            }
+
+            return await CompetitionConverter.ConvertMany(tempList);
+        }
+
+        /// <summary>
+        /// Read all competition entries from the PES database.
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        public async Task<List<CompetitionEntry>> ReadCompetitionEntriesAsync(string path)
+        {
+            MemoryStream memory = await this.CreateMemoryStreamAsync(path + competitionEntryPath);
+
+            var reader = new BinaryReader(memory);
+
+            int index;
+            int length = Convert.ToInt32(reader.BaseStream.Length / competitionEntryBlock);
+
+            reader.BaseStream.Position = 0;
+            string all = System.Text.Encoding.UTF8.GetString(reader.ReadBytes(96));
+
+
+            List<PESCompetitionEntry> tempList = new List<PESCompetitionEntry>();
+
+            for (int i = 0; i < length; i++)
+            {
+                index = (i * competitionEntryBlock);
+                reader.BaseStream.Position = index;
+
+                UInt32 teamId = reader.ReadUInt32();
+                UInt32 continentalCompetitionId = reader.ReadUInt16(); // continental cup
+                UInt16 entryIndex = reader.ReadUInt16();
+
+                byte compId = reader.ReadByte(); // competition (league)
+                byte check2 = reader.ReadByte();
+                byte check3 = reader.ReadByte(); // order
+                byte check4 = reader.ReadByte(); // group
+
+
+                PESCompetitionEntry comp = new PESCompetitionEntry()
+                {
+                    Id = entryIndex,
+                    Position = index,
+                    TeamId = teamId,
+                    CompetitionId = compId,
+                    ContinentalCompetitionId = continentalCompetitionId,
+                    Order = check3, // order
+                    Group = check4, // group
+                };
+
+                tempList.Add(comp);
+            }
+
+            //var championsleague = tempList.Where(x => x.CompetitionId == 2);
+            //var pool = tempList.Where(x => x.TeamId == 103);
+
+            return await CompetitionEntryConverter.ConvertMany(tempList);
         }
 
         /// <summary>

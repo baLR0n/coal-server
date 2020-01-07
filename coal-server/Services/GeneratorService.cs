@@ -115,9 +115,9 @@ namespace CoalServer.Services
                 Club club = new Club()
                 {
                     ClubId = clubGuid,
-                    FirstTeamId = clubGuid + "1",
-                    ReservesTeamId = clubGuid + "2",
-                    YouthTeamId = clubGuid + "3",
+                    FirstTeamId = clubGuid + "T1",
+                    ReservesTeamId = clubGuid + "T2",
+                    YouthTeamId = clubGuid + "T3",
                     Name = "Club " + i,
                     CountryId = r.Next(0, 10),
                     DomesticPrestige = r.Next(1, 10),
@@ -136,7 +136,7 @@ namespace CoalServer.Services
         /// </summary>
         /// <param name="clubs"></param>
         /// <returns></returns>
-        public async Task<List<Team>> GenerateTeamsAsync(List<Club> clubs)
+        public async Task<List<Team>> GenerateTeamsAsync(List<Club> clubs, ClubGenerationMode mode = ClubGenerationMode.AllTeams)
         {
             List<Team> results = new List<Team>();
 
@@ -144,19 +144,25 @@ namespace CoalServer.Services
             {
                 Club club = clubs[i];
 
-                // First team
-                Team firstTeam = new Team()
+                if ((int)mode <= 3)
                 {
-                    TeamId = club.FirstTeamId,
-                    ClubId = club.Id,
-                    Name = club.Name,
-                };
+
+                    // First team
+                    Team firstTeam = new Team()
+                    {
+                        TeamId = club.FirstTeamId,
+                        ClubId = club.ClubId,
+                        Name = club.Name,
+                    };
+
+                    results.Add(firstTeam);
+                }
 
                 // Second team
                 Team secondTeam = new Team()
                 {
                     TeamId = club.ReservesTeamId,
-                    ClubId = club.Id,
+                    ClubId = club.ClubId,
                     Name = club.Name + " II",
                 };
 
@@ -164,11 +170,11 @@ namespace CoalServer.Services
                 Team youthTeam = new Team()
                 {
                     TeamId = club.YouthTeamId,
-                    ClubId = club.Id,
+                    ClubId = club.ClubId,
                     Name = club.Name + " U19",
                 };
 
-                results.Add(firstTeam);
+                
                 results.Add(secondTeam);
                 results.Add(youthTeam);
             }
@@ -184,7 +190,7 @@ namespace CoalServer.Services
         /// <param name="count"></param>
         /// <param name="countryId"></param>
         /// <returns></returns>
-        public async Task<List<Player>> GeneratePlayersAsync(List<Club> clubs)
+        public async Task<List<Player>> GeneratePlayersAsync(List<Club> clubs, ClubGenerationMode mode = ClubGenerationMode.AllTeams)
         {
             List<Player> results = new List<Player>();
             Random r = new Random();
@@ -193,19 +199,23 @@ namespace CoalServer.Services
             {
                 Club club = clubs[i];
 
-                // First team
-                for (int j = 0; j < r.Next(20, 28); j++)
+                // ToDo: Handle all generation modes.
+                if ((int)mode <= 3)
                 {
-                    Player player = new Player()
+                    // First team
+                    for (int j = 0; j < r.Next(20, 28); j++)
                     {
-                        PlayerId = Guid.NewGuid().ToString(),
-                        ClubId = club.ClubId,
-                        TeamId = club.FirstTeamId,
-                        FirstName = "Michael" + i,
-                        LastName = "Lohr" + i,
-                        Overall = r.Next(40, 99),
-                    };
-                    results.Add(player);
+                        Player player = new Player()
+                        {
+                            PlayerId = Guid.NewGuid().ToString(),
+                            ClubId = club.ClubId,
+                            TeamId = club.FirstTeamId,
+                            Name = "M. Lohr " + i,
+                            ShirtName = "Lohr" + i,
+                            Overall = r.Next(40, 99),
+                        };
+                        results.Add(player);
+                    }
                 }
 
                 // Second team
@@ -216,8 +226,8 @@ namespace CoalServer.Services
                         PlayerId = Guid.NewGuid().ToString(),
                         ClubId = club.Id,
                         TeamId = club.ReservesTeamId,
-                        FirstName = "Michael" + i,
-                        LastName = "Lohr" + i,
+                        Name = "M. Lohr " + i,
+                        ShirtName = "Lohr" + i,
                         Overall = r.Next(40, 99),
                     };
                     results.Add(player);
@@ -231,8 +241,8 @@ namespace CoalServer.Services
                         PlayerId = Guid.NewGuid().ToString(),
                         ClubId = club.Id,
                         TeamId = club.YouthTeamId,
-                        FirstName = "Michael" + i,
-                        LastName = "Lohr" + i,
+                        Name = "M. Lohr " + i,
+                        ShirtName = "Lohr" + i,
                         Overall = r.Next(40, 99),
                     };
                     results.Add(player);
@@ -273,5 +283,16 @@ namespace CoalServer.Services
             await this.contracts.InsertManyAsync(results);
             return results;
         }
+    }
+
+    public enum ClubGenerationMode
+    {
+        AllTeams,
+        FirstOnly,
+        FirstAndReserves,
+        FirstAndYouth,
+        ReservesAndYouth,
+        ReservesOnly,
+        YouthOnly
     }
 }

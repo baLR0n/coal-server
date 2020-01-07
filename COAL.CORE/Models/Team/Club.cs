@@ -36,5 +36,8 @@ namespace COAL.CORE.Models.Team
 
         [BsonElement("youth_team_id")]
         public string YouthTeamId { get; set; }
+
+        [BsonElement("is_national_team")]
+        public bool IsNationalTeam { get; set; }
     }
 }

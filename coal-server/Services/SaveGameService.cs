@@ -1,5 +1,6 @@
 ﻿using COAL.CORE.Core.Game;
 using COAL.CORE.Models;
+using COAL.PES.Data;
 using MongoDB.Driver;
 using System;
 using System.Collections.Generic;
@@ -15,6 +16,7 @@ namespace CoalServer.Services
         private readonly GeneratorService generatorService;
         private readonly TableService tableService;
         private readonly CompetitionService competitionService;
+        private readonly ClubService clubService;
         private readonly TeamService teamService;
         private readonly MatchService matchService;
         private readonly IMongoDatabase mainDatabase;
@@ -24,6 +26,7 @@ namespace CoalServer.Services
             GeneratorService generatorService,
             TableService tableService,
             CompetitionService competitionService,
+            ClubService clubService,
             TeamService teamService,
             MatchService matchService,
             PlayerService playerService)
@@ -36,6 +39,7 @@ namespace CoalServer.Services
             this.generatorService = generatorService;
             this.tableService = tableService;
             this.competitionService = competitionService;
+            this.clubService = clubService;
             this.teamService = teamService;
             this.matchService = matchService;
             this.playerService = playerService;
@@ -46,36 +50,82 @@ namespace CoalServer.Services
         /// </summary>
         /// <param name="id"></param>
         /// <param name="init">Init everything, if it´s the first time.</param>
-        public async Task<bool> LoadAsync(string id, bool init = false)
+        public async Task<bool> LoadAsync(SaveGame saveGame, bool init = false)
         {
-            this.settings.DatabaseName = id;
+            this.settings.DatabaseName = saveGame.SaveGameId;
+            this.settings.DataPath = saveGame.DataPath;
             this.RefreshServices();
 
             // If database doesn´t exist yet, create it.
             MongoClient client = new MongoClient(settings.ConnectionString);
-            var db = client.GetDatabase(id);
+            var db = client.GetDatabase(saveGame.SaveGameId);
 
-            IMongoCollection<object> playersCollection = db.GetCollection<object>("Players");
+            //IMongoCollection<object> playersCollection = db.GetCollection<object>("Players");
 
-            if(playersCollection == null)
-            {
-                // Initialize all collections.
-                var taskPlayers = db.CreateCollectionAsync("Players");
-                var taskTeams = db.CreateCollectionAsync("Teams");
-                var taskCoaches = db.CreateCollectionAsync("Coaches");
-                var taskContracts = db.CreateCollectionAsync("Contracts");
+            //if(playersCollection == null)
+            //{
+            //    // Initialize all collections.
+            //    var taskPlayers = db.CreateCollectionAsync("Players");
+            //    var taskTeams = db.CreateCollectionAsync("Teams");
+            //    var taskCoaches = db.CreateCollectionAsync("Coaches");
+            //    var taskContracts = db.CreateCollectionAsync("Contracts");
 
-                await Task.WhenAll(taskPlayers, taskTeams, taskCoaches, taskContracts);
-            }
+            //    await Task.WhenAll(taskPlayers, taskTeams, taskCoaches, taskContracts);
+            //}
 
             if (init)
             {
-                this.generatorService.Refresh();
+                // Step 1: Read PES data and transform it to COAL data
+                PESDataReader reader = new PESDataReader();
 
-                var clubs = await this.generatorService.GenerateClubsAsync();
+                // Get Clubs and insert them into COAL DB.
+                var clubs = await reader.ReadClubsAsync(settings.DataPath);
+                clubs = await this.clubService.CreateManyAsync(clubs);
+
+                // Generate teams.
                 var teams = await this.generatorService.GenerateTeamsAsync(clubs);
-                var competitions = await this.generatorService.GenerateCompetitionsAsync();
-                var players = await this.generatorService.GeneratePlayersAsync(clubs);
+
+                // Get Players and insert them into COAL DB.
+                var players = await reader.ReadPlayersAsync(settings.DataPath);
+                players = await this.playerService.CreateManyAsync(players);
+
+                // ToDo: Get competitions (competitions, competition regulations, )
+
+                // Get Competitions
+                var competitions = await reader.ReadCompetitionsAsync(settings.DataPath);
+                competitions = await this.competitionService.CreateManyAsync(competitions);
+
+                // Apply competition entries ( competition <-> team assignments)
+                var competitionEntries = await reader.ReadCompetitionEntriesAsync(settings.DataPath);
+                competitions = await this.competitionService.ApplyCompetitionEntriesAsync(competitionEntries);
+
+                // Create tables and matches for competitions
+                foreach (var competition in competitions)
+                {
+                    if(competition.Teams.Count == 0)
+                    {
+                        continue;
+                    }
+
+                    await this.tableService.CreateFromCompetitionAsync(competition);
+
+                    if (competition.Teams.Count > 2)
+                    {
+                        await this.matchService.CreateFixturesFromCompetitionAsync(competition);
+                    }
+                }
+                
+
+                // Step 2: Apply data assignments (player <-> team, etc.)
+                var teamAssignments = await reader.ReadPlayerAssignmentsAsync(settings.DataPath);
+                await this.playerService.ApplyTeamAssignments(teamAssignments);
+
+                // Step 3: Generate additional data we need ( reserve players, youth players, coaches, contracts, etc.)
+                var additionalPlayers = await this.generatorService.GeneratePlayersAsync(clubs, ClubGenerationMode.ReservesAndYouth);
+
+                // Step 4: Generate lower leagues completely randomly
+                
+                // ToDo: Get real contract lenght (and maybe wages)
                 var contracts = await this.generatorService.GenerateContractsAsync(players);
 
                 return true;
@@ -138,7 +188,7 @@ namespace CoalServer.Services
         public async Task<SaveGame> CreateAsync(SaveGame saveGame)
         {
             this.saveGames.InsertOne(saveGame);
-            await LoadAsync(saveGame.SaveGameId, true).ConfigureAwait(false);
+            await LoadAsync(saveGame, true).ConfigureAwait(false);
             return saveGame;
         }
 
@@ -159,6 +209,7 @@ namespace CoalServer.Services
             this.generatorService.Refresh();
             this.competitionService.Refresh();
             this.tableService.Refresh();
+            this.clubService.Refresh();
             this.teamService.Refresh();
             this.matchService.Refresh();
             this.playerService.Refresh();

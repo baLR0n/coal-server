@@ -10,7 +10,7 @@ namespace COAL.CORE.Models.Team
         [BsonElement("position")]
         public int Position { get; set; }
 
-        [BsonElement("sheet_position_id")]
-        public int PlayerId { get; set; }
+        [BsonElement("player_id")]
+        public string PlayerId { get; set; }
     }
 }

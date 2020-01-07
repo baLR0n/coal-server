@@ -8,5 +8,11 @@ namespace COAL.CORE.Models
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
         public string Id { get; set; }
+
+        [BsonElement("database_position")]
+        public int DatabasePosition { get; set; }
+
+        [BsonElement("source_id")]
+        public string SourceId { get; set; }
     }
 }

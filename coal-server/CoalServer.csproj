@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\COAL.CORE\COAL.CORE.csproj" />
+    <ProjectReference Include="..\COAL.PES\COAL.PES.csproj" />
   </ItemGroup>
 
 </Project>

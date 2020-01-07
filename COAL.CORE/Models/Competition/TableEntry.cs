@@ -13,6 +13,9 @@ namespace COAL.CORE.Models.Competition
         [BsonElement("team_id")]
         public string TeamId { get; set; }
 
+        [BsonElement("team_name")]
+        public string TeamName { get; set; }
+
         [BsonElement("games_played")]
         public int GamesPlayed { get; set; } // ?
 

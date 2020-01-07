@@ -6,10 +6,10 @@ namespace COAL.CORE.Models.Team
     public class TeamSheet : BaseModel
     {
         [BsonElement("team_sheet_id")]
-        public int TeamSheetId { get; set; }
+        public string TeamSheetId { get; set; }
 
         [BsonElement("team_id")]
-        public int TeamId { get; set; }
+        public string TeamId { get; set; }
 
         [BsonElement("sheet_positions")]
         public List<SheetPosition> SheetPositions { get; set; }

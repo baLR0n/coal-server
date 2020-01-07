@@ -10,6 +10,9 @@ namespace COAL.CORE.Core.Game
         [BsonElement("save_game_id")]
         public string SaveGameId { get; set; }
 
+        [BsonElement("data_path")]
+        public string DataPath { get; set; }
+
         [BsonElement("created_at")]
         public DateTime CreatedAt { get; set; }
 

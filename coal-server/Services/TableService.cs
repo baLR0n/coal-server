@@ -16,6 +16,7 @@ namespace CoalServer.Services
 
         private readonly ICoalDatabaseSettings settings;
         private IMongoCollection<Table> tables;
+        private IMongoCollection<Team> teams;
 
         public TableService(ICoalDatabaseSettings settings)
         {
@@ -29,6 +30,7 @@ namespace CoalServer.Services
             this.database = client.GetDatabase(settings.DatabaseName);
 
             this.tables = this.database.GetCollection<Table>(settings.TablesCollectionName);
+            this.teams = this.database.GetCollection<Team>(settings.TeamsCollectionName);
         }
 
         /// <summary>
@@ -140,7 +142,8 @@ namespace CoalServer.Services
                 table.Teams.Add(new TableEntry()
                 {
                     TableId = table.TableId,
-                    TeamId = t
+                    TeamId = t,
+                    TeamName = this.teams.Find(x => x.TeamId == t).FirstOrDefault().Name,
                 });
             });
 

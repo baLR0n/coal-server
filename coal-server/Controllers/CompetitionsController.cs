@@ -57,7 +57,7 @@ namespace coal_server.Controllers
         public async Task<ActionResult<List<Match>>> GetFixturesAsync(string id)
         {
             // ToDo: Parameter for Season (-T19 => TXX)
-            List<Match> fixtures = await this.matchService.GetFixturesForTableAsync(id + "-T19");
+            List<Match> fixtures = await this.matchService.GetFixturesForTableAsync(id + "-T0");
 
             if (fixtures == null)
             {
@@ -77,7 +77,7 @@ namespace coal_server.Controllers
 
         // PUT api/competitions/5
         [HttpPut("{id}")]
-        public IActionResult Update(string id, Competition competitionIn)
+        public async Task<IActionResult> Update(string id, Competition competitionIn)
         {
             Competition competition = this.competitionService.Get(id);
 
@@ -86,7 +86,7 @@ namespace coal_server.Controllers
                 return NotFound();
             }
 
-            this.competitionService.Update(id, competitionIn);
+            await this.competitionService.UpdateAsync(id, competitionIn);
             return NoContent();
         }
 

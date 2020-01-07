@@ -15,6 +15,7 @@ namespace COAL.CORE.Models
         public string ConnectionString { get; set; }
         public string MainDatabase { get; set; }
         public string DatabaseName { get; set; }
+        public string DataPath { get; set; }
         public string CompetitionsCollectionName { get; set; }
         public string TablesCollectionName { get; set; }
         public string MatchesCollectionName { get; set; }
@@ -30,6 +31,7 @@ namespace COAL.CORE.Models
         string ConnectionString { get; set; }
         string MainDatabase { get; set; }
         string DatabaseName { get; set; }
+        string DataPath { get; set; }
         string CompetitionsCollectionName { get; set; }
         string TablesCollectionName { get; set; }
         string MatchesCollectionName { get; set; }
