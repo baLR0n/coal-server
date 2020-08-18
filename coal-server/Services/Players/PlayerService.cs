@@ -6,9 +6,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace CoalServer.Services
+namespace CoalServer.Services.Players
 {
-    public class PlayerService
+    public class PlayerService : IPlayerService
     {
         private IMongoCollection<Player> players;
         private IMongoCollection<Club> clubs;
@@ -46,7 +46,7 @@ namespace CoalServer.Services
         /// </summary>
         /// <param name="assignments"></param>
         /// <returns></returns>
-        public async Task<bool> ApplyTeamAssignments(List<TeamAssignment> assignments)
+        public async Task<bool> ApplyTeamAssignmentsAsync(List<TeamAssignment> assignments)
         {
             List<Player> tempList = new List<Player>();
 
@@ -66,18 +66,10 @@ namespace CoalServer.Services
                 tempList.Add(temp);
             });
 
-            this.UpdateMany(tempList);
+            await this.UpdateManyAsync(tempList);
 
             return await Task.FromResult(true);
         }
-
-
-        public List<Player> Get() =>
-            
-            this.players.Find(player => true).ToList();
-
-        public Player Get(string id) =>
-            this.players.Find<Player>(player => player.Id == id).FirstOrDefault();
 
         /// <summary>
         /// Get all players from a specified team.
@@ -89,14 +81,24 @@ namespace CoalServer.Services
             return await this.players.Find(player => player.TeamId == teamId).ToListAsync();
         }
 
+        public async Task<List<Player>> GetAsync()
+        {
+            return await this.players.FindAsync(player => true).Result.ToListAsync();
+        }
+
+        public async Task<Player> GetAsync(string id)
+        {
+            return await this.players.FindAsync<Player>(player => player.Id == id).Result.FirstOrDefaultAsync(); 
+        }            
+
         /// <summary>
         /// Create a player.
         /// </summary>
         /// <param name="player"></param>
         /// <returns></returns>
-        public Player Create(Player player)
+        public async Task<Player> CreateAsync(Player player)
         {
-            this.players.InsertOne(player);
+            await this.players.InsertOneAsync(player);
             return player;
         }
 
@@ -112,23 +114,41 @@ namespace CoalServer.Services
             return players;
         }
 
-        public async Task UpdateAsync(string id, Player playerIn) =>
+        public async Task UpdateAsync(string id, Player playerIn)
+        {
             await this.players.ReplaceOneAsync(player => player.Id == id, playerIn);
+        }
 
         /// <summary>
         /// Updates a list of players
         /// </summary>
         /// <param name="playersIn"></param>
         /// <returns></returns>
-        public void UpdateMany(List<Player> playersIn)
+        public async Task UpdateManyAsync(List<Player> playersIn)
         {
             playersIn.ForEach(async p => { await this.UpdateAsync(p.Id, p); });
         }
 
-        public void Remove(Player playerIn) =>
-            this.players.DeleteOne(player => player.Id == playerIn.Id);
+        /// <summary>
+        /// Removes a player
+        /// </summary>
+        /// <param name="playerIn"></param>
+        /// <returns></returns>
+        public async Task RemoveAsync(Player playerIn)
+        {
+            await this.players.DeleteOneAsync(player => player.Id == playerIn.Id);
+        }
 
-        public void Remove(string id) =>
-            this.players.DeleteOne(player => player.Id == id);
+
+        /// <summary>
+        /// Remove the player with an specific id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public async Task RemoveAsync(string id)
+        {
+            await this.players.DeleteOneAsync(player => player.Id == id);
+        }
+            
     }
 }

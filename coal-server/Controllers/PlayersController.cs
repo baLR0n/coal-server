@@ -1,5 +1,5 @@
 ﻿using COAL.CORE.Models;
-using CoalServer.Services;
+using CoalServer.Services.Players;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -10,22 +10,22 @@ namespace coal_server.Controllers
     [ApiController]
     public class PlayersController : ControllerBase
     {
-        private readonly PlayerService playerService;
+        private readonly IPlayerService playerService;
 
-        public PlayersController(PlayerService playerService)
+        public PlayersController(IPlayerService playerService)
         {
             this.playerService = playerService;
         }
 
         // GET api/players
         [HttpGet]
-        public ActionResult<List<Player>> Get() => this.playerService.Get();
+        public async Task<ActionResult<List<Player>>> Get() => await this.playerService.GetAsync();
 
         // GET api/players/5
         [HttpGet("{id}", Name = "GetPlayer")]
-        public ActionResult<Player> Get(string id)
+        public async Task<ActionResult<Player>> Get(string id)
         {
-            Player player = this.playerService.Get(id);
+            Player player = await this.playerService.GetAsync(id);
             if(player == null)
             {
                 return NotFound();
@@ -49,9 +49,9 @@ namespace coal_server.Controllers
 
         // POST api/players
         [HttpPost]
-        public ActionResult<Player> Create(Player player)
+        public async Task<ActionResult<Player>> Create(Player player)
         {
-            this.playerService.Create(player);
+            await this.playerService.CreateAsync(player);
             return CreatedAtRoute("GetPlayer", new { id = player.Id.ToString() }, player);
         }
 
@@ -59,7 +59,7 @@ namespace coal_server.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(string id, Player playerIn)
         {
-            Player player = this.playerService.Get(id);
+            Player player = await this.playerService.GetAsync(id);
 
             if(player == null)
             {
@@ -72,16 +72,16 @@ namespace coal_server.Controllers
 
         // DELETE api/players/5
         [HttpDelete("{id}")]
-        public IActionResult Delete(string id)
+        public async Task<IActionResult> Delete(string id)
         {
-            Player player = this.playerService.Get(id);
+            Player player = await this.playerService.GetAsync(id);
 
             if (player == null)
             {
                 return NotFound();
             }
 
-            this.playerService.Remove(player.Id);
+            await this.playerService.RemoveAsync(player.Id);
             return NoContent();
         }
     }

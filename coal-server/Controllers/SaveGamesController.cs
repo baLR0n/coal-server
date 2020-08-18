@@ -1,6 +1,8 @@
 ﻿using COAL.CORE.Core.Game;
 using COAL.CORE.Models;
 using CoalServer.Services;
+using CoalServer.Services.Players;
+using CoalServer.Services.SaveGames;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -12,10 +14,10 @@ namespace coal_server.Controllers
     [ApiController]
     public class SaveGamesController : ControllerBase
     {
-        private readonly SaveGameService saveGameService;
-        private readonly PlayerService playerService;
+        private readonly ISaveGameService saveGameService;
+        private readonly IPlayerService playerService;
 
-        public SaveGamesController(SaveGameService saveGameService, PlayerService playerService)
+        public SaveGamesController(ISaveGameService saveGameService, IPlayerService playerService)
         {
             this.saveGameService = saveGameService;
             this.playerService = playerService;
@@ -23,7 +25,10 @@ namespace coal_server.Controllers
 
         // GET api/saveGames
         [HttpGet]
-        public ActionResult<List<SaveGame>> Get() => this.saveGameService.Get();
+        public async Task<ActionResult<List<SaveGame>>> GetAsync()
+        {
+            return await this.saveGameService.GetAsync();
+        }
 
         /// <summary>
         /// Loads a specified save game.
@@ -33,7 +38,7 @@ namespace coal_server.Controllers
         [HttpGet("load/{id}")]
         public async Task<ActionResult<SaveGame>> LoadAsync(string id)
         {
-            SaveGame saveGame = this.saveGameService.GetByName(id);
+            SaveGame saveGame = await this.saveGameService.GetByNameAsync(id);
             if (saveGame == null)
             {
                 return NotFound();
@@ -52,7 +57,7 @@ namespace coal_server.Controllers
         [HttpGet("simulate")]
         public async Task<ActionResult<DateTime>> SimulateDay()
         {
-            SaveGame newSaveGame = await this.saveGameService.IncrementIngameDate();
+            SaveGame newSaveGame = await this.saveGameService.IncrementIngameDateAsync();
 
             return Ok(newSaveGame.InGameDate);
         }
@@ -64,9 +69,9 @@ namespace coal_server.Controllers
         /// <param name="id"></param>
         /// <returns></returns>
         [HttpGet("{id}", Name = "GetSaveGame")]
-        public ActionResult<SaveGame> Get(string id)
+        public async Task<ActionResult<SaveGame>> GetAsync(string id)
         {
-            SaveGame saveGame = this.saveGameService.GetByName(id);
+            SaveGame saveGame = await this.saveGameService.GetByNameAsync(id);
             if(saveGame == null)
             {
                 return NotFound();
@@ -90,31 +95,31 @@ namespace coal_server.Controllers
 
         // PUT api/saveGames/5
         [HttpPut("{id}")]
-        public IActionResult Update(string id, SaveGame saveGameIn)
+        public async Task<IActionResult> UpdateAsync(string id, SaveGame saveGameIn)
         {
-            SaveGame saveGame = this.saveGameService.Get(id);
+            SaveGame saveGame = await this.saveGameService.GetAsync(id);
 
             if(saveGame == null)
             {
                 return NotFound();
             }
 
-            this.saveGameService.Update(id, saveGameIn);
+            await this.saveGameService.UpdateAsync(id, saveGameIn);
             return NoContent();
         }
 
         // DELETE api/saveGames/5
         [HttpDelete("{id}")]
-        public IActionResult Delete(string id)
+        public async Task<IActionResult> DeleteAsync(string id)
         {
-            SaveGame saveGame = this.saveGameService.Get(id);
+            SaveGame saveGame = await this.saveGameService.GetAsync(id);
 
             if (saveGame == null)
             {
                 return NotFound();
             }
 
-            this.saveGameService.Remove(saveGame.Id);
+            await this.saveGameService.RemoveAsync(saveGame.Id);
             return NoContent();
         }
     }

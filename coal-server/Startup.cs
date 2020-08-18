@@ -1,5 +1,13 @@
 ﻿using COAL.CORE.Models;
 using CoalServer.Services;
+using CoalServer.Services.Clubs;
+using CoalServer.Services.Competitions;
+using CoalServer.Services.Generator;
+using CoalServer.Services.Matches;
+using CoalServer.Services.Players;
+using CoalServer.Services.SaveGames;
+using CoalServer.Services.Tables;
+using CoalServer.Services.Teams;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
@@ -30,14 +38,14 @@ namespace coal_server
             services.AddSingleton<ICoalDatabaseSettings>(sp =>
                 sp.GetRequiredService<IOptions<CoalDatabaseSettings>>().Value);
 
-            services.AddSingleton<SaveGameService>();
-            services.AddSingleton<PlayerService>();
-            services.AddSingleton<ClubService>();
-            services.AddSingleton<TeamService>();
-            services.AddSingleton<CompetitionService>();
-            services.AddSingleton<TableService>();
-            services.AddSingleton<MatchService>();
-            services.AddSingleton<GeneratorService>();
+            services.AddSingleton<ISaveGameService, SaveGameService>();
+            services.AddSingleton<IPlayerService, PlayerService>();
+            services.AddSingleton<IClubService, ClubService>();
+            services.AddSingleton<ITeamService, TeamService>();
+            services.AddSingleton<ICompetitionService, CompetitionService>();
+            services.AddSingleton<ITableService, TableService>();
+            services.AddSingleton<IMatchService, MatchService>();
+            services.AddSingleton<IGeneratorService, GeneratorService>();
 
             services.AddMvc()
                 .SetCompatibilityVersion(CompatibilityVersion.Version_2_1);

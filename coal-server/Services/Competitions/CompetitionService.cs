@@ -7,9 +7,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace CoalServer.Services
+namespace CoalServer.Services.Competitions
 {
-    public class CompetitionService
+    public class CompetitionService : ICompetitionService
     {
         private IMongoDatabase database;
         private IMongoCollection<Competition> competitions;
@@ -67,25 +67,43 @@ namespace CoalServer.Services
                 }
             });
 
-            return await Task.FromResult(this.Get());
+            return await this.GetAsync();
         }
 
-        public List<Competition> Get() =>
-            this.competitions.Find(competition => true).ToList();
-
-        public Competition Get(string id) =>
-            this.competitions.Find<Competition>(competition => competition.Id == id).FirstOrDefault();
-
-        public Competition Create(Competition competition)
+        /// <summary>
+        /// Returns all competitions.
+        /// </summary>
+        /// <returns></returns>
+        public async Task<List<Competition>> GetAsync()
         {
-            this.competitions.InsertOne(competition);
+            return await this.competitions.FindAsync(player => true).Result.ToListAsync();
+        }
+
+        /// <summary>
+        /// Returns a competition with a specified ID.
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public async Task<Competition> GetAsync(string id)
+        {
+            return await this.competitions.FindAsync<Competition>(competition => competition.Id == id).Result.FirstOrDefaultAsync();
+        }
+
+        /// <summary>
+        /// Creates a new competition entity.
+        /// </summary>
+        /// <param name="competition"></param>
+        /// <returns></returns>
+        public async Task<Competition> CreateAsync(Competition competition)
+        {
+            await this.competitions.InsertOneAsync(competition);
             return competition;
         }
 
         /// <summary>
         /// Insert a list of competitions.
         /// </summary>
-        /// <param name="players"></param>
+        /// <param name="competitions"></param>
         /// <returns></returns>
         public async Task<List<Competition>> CreateManyAsync(List<Competition> competitions)
         {
@@ -94,24 +112,47 @@ namespace CoalServer.Services
             return competitions;
         }
 
-        public async Task UpdateAsync(string id, Competition competitionIn) =>
+        /// <summary>
+        /// Updates a specific competition entity
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="competitionIn"></param>
+        /// <returns></returns>
+        public async Task UpdateAsync(string id, Competition competitionIn)
+        {
             await this.competitions.ReplaceOneAsync(competition => competition.Id == id, competitionIn);
+        }
 
         /// <summary>
         /// Updates a list of competitions
         /// </summary>
         /// <param name="competitionsIn"></param>
         /// <returns></returns>
-        public void UpdateMany(List<Competition> competitionsIn)
+        public async Task UpdateManyAsync(List<Competition> competitionsIn)
         {
-            competitionsIn.ForEach(async c => { await this.UpdateAsync(c.Id, c); });
+            competitionsIn.ForEach(async p => { await this.UpdateAsync(p.Id, p); });
         }
 
-        public void Remove(Competition competitionIn) =>
-            this.competitions.DeleteOne(competition => competition.Id == competitionIn.Id);
+        /// <summary>
+        /// Removes a competition
+        /// </summary>
+        /// <param name="competitionIn"></param>
+        /// <returns></returns>
+        public async Task RemoveAsync(Competition competitionIn)
+        {
+            await this.competitions.DeleteOneAsync(competition => competition.Id == competitionIn.Id);
+        }
 
-        public void Remove(string id) =>
-            this.competitions.DeleteOne(competition => competition.Id == id);
+
+        /// <summary>
+        /// Remove the competition with an specific id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public async Task RemoveAsync(string id)
+        {
+            await this.competitions.DeleteOneAsync(competition => competition.Id == id);
+        }
 
     }
 }

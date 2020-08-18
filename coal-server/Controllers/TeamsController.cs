@@ -1,7 +1,9 @@
 ﻿using COAL.CORE.Models.Team;
 using CoalServer.Services;
+using CoalServer.Services.Teams;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace coal_server.Controllers
 {
@@ -9,22 +11,25 @@ namespace coal_server.Controllers
     [ApiController]
     public class TeamsController : ControllerBase
     {
-        private readonly TeamService teamService;
+        private readonly ITeamService teamService;
 
-        public TeamsController(TeamService teamService)
+        public TeamsController(ITeamService teamService)
         {
             this.teamService = teamService;
         }
 
         // GET api/teams
         [HttpGet]
-        public ActionResult<List<Team>> Get() => this.teamService.Get();
+        public async Task<ActionResult<List<Team>>> GetAsync()
+        {
+            return await this.teamService.GetAsync();
+        }
 
         // GET api/teams/5
         [HttpGet("{id}", Name = "GetTeam")]
-        public ActionResult<Team> Get(string id)
+        public async Task<ActionResult<Team>> GetAsync(string id)
         {
-            Team team = this.teamService.Get(id);
+            Team team = await this.teamService.GetAsync(id);
             if (team == null)
             {
                 return NotFound();
@@ -37,37 +42,37 @@ namespace coal_server.Controllers
         [HttpPost]
         public ActionResult<Team> Create(Team team)
         {
-            this.teamService.Create(team);
+            this.teamService.CreateAsync(team);
             return CreatedAtRoute("Teams", new { id = team.Id.ToString() }, team);
         }
 
         // PUT api/teams/5
         [HttpPut("{id}")]
-        public IActionResult Update(string id, Team teamIn)
+        public async Task<IActionResult> UpdateAsync(string id, Team teamIn)
         {
-            Team team = this.teamService.Get(id);
+            Team team = await this.teamService.GetAsync(id);
 
             if (team == null)
             {
                 return NotFound();
             }
 
-            this.teamService.Update(id, teamIn);
+            this.teamService.UpdateAsync(id, teamIn);
             return NoContent();
         }
 
         // DELETE api/teams/5
         [HttpDelete("{id}")]
-        public IActionResult Delete(string id)
+        public async Task<IActionResult> DeleteAsync(string id)
         {
-            Team team = this.teamService.Get(id);
+            Team team = await this.teamService.GetAsync(id);
 
             if (team == null)
             {
                 return NotFound();
             }
 
-            this.teamService.Remove(team.Id);
+            this.teamService.RemoveAsync(team.Id);
             return NoContent();
         }
     }

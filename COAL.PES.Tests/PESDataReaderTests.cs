@@ -80,7 +80,7 @@ namespace Tests
         /// </summary>
         /// <returns></returns>
         [Test]
-        public async Task TestReadPlayerAssignments()
+        public async Task TestReadPlayerAssignmentsAsync()
         {
             List<TeamAssignment> result = await this.reader.ReadPlayerAssignmentsAsync("C:\\pesdb");
 

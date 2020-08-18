@@ -1,14 +1,16 @@
 ﻿using COAL.CORE.Models;
 using COAL.CORE.Models.Competition;
 using COAL.CORE.Models.Team;
+using CoalServer.Services.Matches;
+using CoalServer.Services.Tables;
 using MongoDB.Driver;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace CoalServer.Services
+namespace CoalServer.Services.Generator
 {
-    public class GeneratorService
+    public class GeneratorService : IGeneratorService
     {
         private IMongoDatabase database;
 
@@ -19,15 +21,15 @@ namespace CoalServer.Services
         private IMongoCollection<Contract> contracts;
 
         private readonly ICoalDatabaseSettings settings;
-        private readonly TableService tableService;
-        private readonly MatchService matchService;
+        private readonly ITableService tableService;
+        private readonly IMatchService matchService;
 
         /// <summary>
         /// Initializes a new instance of GeneratorService
         /// </summary>
         /// <param name="settings"></param>
         /// <param name="tableService"></param>
-        public GeneratorService(ICoalDatabaseSettings settings, TableService tableService, MatchService matchService)
+        public GeneratorService(ICoalDatabaseSettings settings, ITableService tableService, IMatchService matchService)
         {
             this.ConnectToDb(settings);
             this.settings = settings;

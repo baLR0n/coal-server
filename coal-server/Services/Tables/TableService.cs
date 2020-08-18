@@ -8,9 +8,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace CoalServer.Services
+namespace CoalServer.Services.Tables
 {
-    public class TableService
+    public class TableService : ITableService
     {
         private IMongoDatabase database;
 
@@ -41,29 +41,10 @@ namespace CoalServer.Services
             this.ConnectToDb(settings);
         }
 
-        public List<Table> Get() =>
-            this.tables.Find(table => true).ToList();
-
-        public Table Get(string id) =>
-            this.tables.Find<Table>(table => table.Id == id).FirstOrDefault();
-
-        public Table GetFromCompetitonId(string competitionId) =>
-            this.tables.Find<Table>(table => table.CompetitionId == competitionId).FirstOrDefault();
-
-        public Table Create(Table table)
+        public async Task<Table> GetFromCompetitonIdAsync(string competitionId)
         {
-            this.tables.InsertOne(table);
-            return table;
+            return await this.tables.FindAsync<Table>(table => table.CompetitionId == competitionId).Result.FirstOrDefaultAsync();
         }
-
-        public void Update(string id, Table tableIn) =>
-            this.tables.ReplaceOne(table => table.Id == id, tableIn);
-
-        public void Remove(Table tableIn) =>
-            this.tables.DeleteOne(table => table.Id == tableIn.Id);
-
-        public void Remove(string id) =>
-            this.tables.DeleteOne(table => table.Id == id);
 
         /// <summary>
         /// Applies a list of matches to a table.
@@ -138,7 +119,8 @@ namespace CoalServer.Services
                 CompetitionId = competition.CompetitionId
             };
 
-            competition.Teams.ForEach(t => {
+            competition.Teams.ForEach(t =>
+            {
                 table.Teams.Add(new TableEntry()
                 {
                     TableId = table.TableId,
@@ -149,6 +131,90 @@ namespace CoalServer.Services
 
             await this.tables.InsertOneAsync(table);
             return table;
+        }
+
+        /// <summary>
+        /// Returns all tables.
+        /// </summary>
+        /// <returns></returns>
+        public async Task<List<Table>> GetAsync()
+        {
+            return await this.tables.FindAsync(player => true).Result.ToListAsync();
+        }
+
+        /// <summary>
+        /// Returns a table with a specified ID.
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public async Task<Table> GetAsync(string id)
+        {
+            return await this.tables.FindAsync<Table>(table => table.Id == id).Result.FirstOrDefaultAsync();
+        }
+
+        /// <summary>
+        /// Creates a new table entity.
+        /// </summary>
+        /// <param name="table"></param>
+        /// <returns></returns>
+        public async Task<Table> CreateAsync(Table table)
+        {
+            await this.tables.InsertOneAsync(table);
+            return table;
+        }
+
+        /// <summary>
+        /// Insert a list of tables.
+        /// </summary>
+        /// <param name="tables"></param>
+        /// <returns></returns>
+        public async Task<List<Table>> CreateManyAsync(List<Table> tables)
+        {
+            await this.tables.InsertManyAsync(tables);
+
+            return tables;
+        }
+
+        /// <summary>
+        /// Updates a specific table entity
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="tableIn"></param>
+        /// <returns></returns>
+        public async Task UpdateAsync(string id, Table tableIn)
+        {
+            await this.tables.ReplaceOneAsync(table => table.Id == id, tableIn);
+        }
+
+        /// <summary>
+        /// Updates a list of tables
+        /// </summary>
+        /// <param name="tablesIn"></param>
+        /// <returns></returns>
+        public async Task UpdateManyAsync(List<Table> tablesIn)
+        {
+            tablesIn.ForEach(async p => { await this.UpdateAsync(p.Id, p); });
+        }
+
+        /// <summary>
+        /// Removes a table
+        /// </summary>
+        /// <param name="tableIn"></param>
+        /// <returns></returns>
+        public async Task RemoveAsync(Table tableIn)
+        {
+            await this.tables.DeleteOneAsync(table => table.Id == tableIn.Id);
+        }
+
+
+        /// <summary>
+        /// Remove the table with an specific id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public async Task RemoveAsync(string id)
+        {
+            await this.tables.DeleteOneAsync(table => table.Id == id);
         }
     }
 }

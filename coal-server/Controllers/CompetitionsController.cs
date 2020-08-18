@@ -1,6 +1,9 @@
 ﻿using COAL.CORE.Models.Competition;
 using COAL.CORE.Models.Competition.Matches;
 using CoalServer.Services;
+using CoalServer.Services.Competitions;
+using CoalServer.Services.Matches;
+using CoalServer.Services.Tables;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -11,11 +14,11 @@ namespace coal_server.Controllers
     [ApiController]
     public class CompetitionsController : ControllerBase
     {
-        private readonly CompetitionService competitionService;
-        private readonly TableService tableService;
-        private readonly MatchService matchService;
+        private readonly ICompetitionService competitionService;
+        private readonly ITableService tableService;
+        private readonly IMatchService matchService;
 
-        public CompetitionsController(CompetitionService competitionService, TableService tableService, MatchService matchService)
+        public CompetitionsController(ICompetitionService competitionService, ITableService tableService, IMatchService matchService)
         {
             this.competitionService = competitionService;
             this.tableService = tableService;
@@ -24,13 +27,16 @@ namespace coal_server.Controllers
 
         // GET api/competitions
         [HttpGet]
-        public ActionResult<List<Competition>> Get() => this.competitionService.Get();
+        public async Task<ActionResult<List<Competition>>> GetAsync()
+        {
+            return await this.competitionService.GetAsync();
+        }
 
         // GET api/competitions/5
         [HttpGet("{id}", Name = "GetCompetition")]
-        public ActionResult<Competition> Get(string id)
+        public async Task<ActionResult<Competition>> GetAsync(string id)
         {
-            Competition competition = this.competitionService.Get(id);
+            Competition competition = await this.competitionService.GetAsync(id);
             if (competition == null)
             {
                 return NotFound();
@@ -41,9 +47,9 @@ namespace coal_server.Controllers
 
         // GET api/competitions/5/table
         [HttpGet("{id}/table", Name = "GetCompetitionTable")]
-        public ActionResult<Table> GetTable(string id)
+        public async Task<ActionResult<Table>> GetTableAsync(string id)
         {
-            Table table = this.tableService.GetFromCompetitonId(id);
+            Table table = await this.tableService.GetFromCompetitonIdAsync(id);
             if (table == null)
             {
                 return NotFound();
@@ -69,9 +75,9 @@ namespace coal_server.Controllers
 
         // POST api/competitions
         [HttpPost]
-        public ActionResult<Competition> Create(Competition competition)
+        public async Task<ActionResult<Competition>> Create(Competition competition)
         {
-            this.competitionService.Create(competition);
+            await this.competitionService.CreateAsync(competition);
             return CreatedAtRoute("Competitions", new { id = competition.Id.ToString() }, competition);
         }
 
@@ -79,7 +85,7 @@ namespace coal_server.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(string id, Competition competitionIn)
         {
-            Competition competition = this.competitionService.Get(id);
+            Competition competition = await this.competitionService.GetAsync(id);
 
             if (competition == null)
             {
@@ -92,16 +98,16 @@ namespace coal_server.Controllers
 
         // DELETE api/competitions/5
         [HttpDelete("{id}")]
-        public IActionResult Delete(string id)
+        public async Task<IActionResult> Delete(string id)
         {
-            Competition competition = this.competitionService.Get(id);
+            Competition competition = await this.competitionService.GetAsync(id);
 
             if (competition == null)
             {
                 return NotFound();
             }
 
-            this.competitionService.Remove(competition.Id);
+            await this.competitionService.RemoveAsync(competition.Id);
             return NoContent();
         }
     }

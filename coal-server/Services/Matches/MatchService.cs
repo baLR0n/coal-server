@@ -7,9 +7,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace CoalServer.Services
+namespace CoalServer.Services.Matches
 {
-    public class MatchService
+    public class MatchService : IMatchService
     {
         private IMongoDatabase database;
 
@@ -45,27 +45,6 @@ namespace CoalServer.Services
             return await this.matches.Find(m => m.TableId == tableId).ToListAsync();
         }
 
-        public List<Match> Get() =>
-            this.matches.Find(match => true).ToList();
-
-        public Match Get(string id) =>
-            this.matches.Find<Match>(match => match.Id == id).FirstOrDefault();
-
-        public Match Create(Match match)
-        {
-            this.matches.InsertOne(match);
-            return match;
-        }
-
-        public void Update(string id, Match matchIn) =>
-            this.matches.ReplaceOne(match => match.Id == id, matchIn);
-
-        public void Remove(Match matchIn) =>
-            this.matches.DeleteOne(match => match.Id == matchIn.Id);
-
-        public void Remove(string id) =>
-            this.matches.DeleteOne(match => match.Id == id);
-
         /// <summary>
         /// Creates a match to a competition.
         /// </summary>
@@ -77,7 +56,7 @@ namespace CoalServer.Services
 
             // We want the first game on a friday.
             // ToDo: Last years champion should be in the first game.
-            while(startDate.DayOfWeek != DayOfWeek.Friday)
+            while (startDate.DayOfWeek != DayOfWeek.Friday)
             {
                 startDate = startDate.AddDays(1);
             }
@@ -87,6 +66,149 @@ namespace CoalServer.Services
 
             await this.matches.InsertManyAsync(fixtures);
             return fixtures;
+        }
+
+        /// <summary>
+        /// Starts a match simulation for a list of matches.
+        /// </summary>
+        /// <param name="matches"></param>
+        /// <returns></returns>
+        public async Task<List<Match>> SimulateMatchesAsync(List<Match> matches)
+        {
+            // ToDo: Obviously, this is just a test implementation.
+            // ToDo: This will be the real meat. Add a chance for a GameEvent every minute and
+            //       continue from there on with a realistic game procession.
+            Random rng = new Random();
+            matches.ForEach(async m =>
+            {
+                var rngHome = rng.Next(0, 9);
+                if (rngHome < 7)
+                {
+                    m.HomeGoals = rng.Next(0, 3);
+                }
+                else if (rngHome < 9)
+                {
+                    m.HomeGoals = rng.Next(0, 5);
+                }
+                else
+                {
+                    m.HomeGoals = rng.Next(0, 6);
+                }
+
+                var rngAway = rng.Next(0, 9);
+                if (rngAway < 7)
+                {
+                    m.AwayGoals = rng.Next(0, 3);
+                }
+                else if (rngAway < 9)
+                {
+                    m.AwayGoals = rng.Next(0, 5);
+                }
+                else
+                {
+                    m.AwayGoals = rng.Next(0, 6);
+                }
+
+                await this.UpdateAsync(m.Id, m);
+            });
+
+            return matches;
+        }
+
+        /// <summary>
+        /// Gets all matches that are due to a specified date and time.
+        /// </summary>
+        /// <param name="inGameDate"></param>
+        /// <returns></returns>
+        public async Task<List<Match>> GetMatchesToSimulateAsync(DateTime inGameDate)
+        {
+            DateTime currentDayStart = inGameDate.Date;
+            DateTime currentDayEnds = inGameDate.Date.AddDays(1);
+            return await this.matches.Find(m => m.DateTime >= currentDayStart && m.DateTime < currentDayEnds).ToListAsync();
+        }
+
+        /// <summary>
+        /// Returns all matches.
+        /// </summary>
+        /// <returns></returns>
+        public async Task<List<Match>> GetAsync()
+        {
+            return await this.matches.FindAsync(player => true).Result.ToListAsync();
+        }
+
+        /// <summary>
+        /// Returns a match with a specified ID.
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public async Task<Match> GetAsync(string id)
+        {
+            return await this.matches.FindAsync<Match>(match => match.Id == id).Result.FirstOrDefaultAsync();
+        }
+
+        /// <summary>
+        /// Creates a new match entity.
+        /// </summary>
+        /// <param name="match"></param>
+        /// <returns></returns>
+        public async Task<Match> CreateAsync(Match match)
+        {
+            await this.matches.InsertOneAsync(match);
+            return match;
+        }
+
+        /// <summary>
+        /// Insert a list of matches.
+        /// </summary>
+        /// <param name="matches"></param>
+        /// <returns></returns>
+        public async Task<List<Match>> CreateManyAsync(List<Match> matches)
+        {
+            await this.matches.InsertManyAsync(matches);
+
+            return matches;
+        }
+
+        /// <summary>
+        /// Updates a specific match entity
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="matchIn"></param>
+        /// <returns></returns>
+        public async Task UpdateAsync(string id, Match matchIn)
+        {
+            await this.matches.ReplaceOneAsync(match => match.Id == id, matchIn);
+        }
+
+        /// <summary>
+        /// Updates a list of matches
+        /// </summary>
+        /// <param name="matchesIn"></param>
+        /// <returns></returns>
+        public async Task UpdateManyAsync(List<Match> matchesIn)
+        {
+            matchesIn.ForEach(async p => { await this.UpdateAsync(p.Id, p); });
+        }
+
+        /// <summary>
+        /// Removes a match
+        /// </summary>
+        /// <param name="matchIn"></param>
+        /// <returns></returns>
+        public async Task RemoveAsync(Match matchIn)
+        {
+            await this.matches.DeleteOneAsync(match => match.Id == matchIn.Id);
+        }
+
+
+        /// <summary>
+        /// Remove the match with an specific id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public async Task RemoveAsync(string id)
+        {
+            await this.matches.DeleteOneAsync(match => match.Id == id);
         }
 
         /// <summary>
@@ -171,65 +293,6 @@ namespace CoalServer.Services
             return fixtures;
         }
 
-        /// <summary>
-        /// Starts a match simulation for a list of matches.
-        /// </summary>
-        /// <param name="matches"></param>
-        /// <returns></returns>
-        public async Task<List<Match>> SimulateMatchesAsync(List<Match> matches)
-        {
-            // ToDo: Obviously, this is just a test implementation.
-            // ToDo: This will be the real meat. Add a chance for a GameEvent every minute and
-            //       continue from there on with a realistic game procession.
-            Random rng = new Random();
-            matches.ForEach(m =>
-            {
-                var rngHome = rng.Next(0, 9);
-                if(rngHome < 7)
-                {
-                    m.HomeGoals = rng.Next(0, 3);
-                }
-                else if(rngHome < 9)
-                {
-                    m.HomeGoals = rng.Next(0, 5);
-                }
-                else
-                {
-                    m.HomeGoals = rng.Next(0, 6);
-                }
-
-                var rngAway = rng.Next(0, 9);
-                if (rngAway < 7)
-                {
-                    m.AwayGoals = rng.Next(0, 3);
-                }
-                else if (rngAway < 9)
-                {
-                    m.AwayGoals = rng.Next(0, 5);
-                }
-                else
-                {
-                    m.AwayGoals = rng.Next(0, 6);
-                }
-
-                this.Update(m.Id, m);
-            });
-
-            return matches;
-        }
-
-        /// <summary>
-        /// Gets all matches that are due to a specified date and time.
-        /// </summary>
-        /// <param name="inGameDate"></param>
-        /// <returns></returns>
-        public async Task<List<Match>> GetMatchesToSimulateAsync(DateTime inGameDate)
-        {
-            DateTime currentDayStart = inGameDate.Date;
-            DateTime currentDayEnds = inGameDate.Date.AddDays(1);
-            return await this.matches.Find(m => m.DateTime >= currentDayStart && m.DateTime < currentDayEnds).ToListAsync();
-        }
-
 
         // ToDo: Util service
 
@@ -255,7 +318,7 @@ namespace CoalServer.Services
         /// <typeparam name="T"></typeparam>
         /// <param name="list"></param>
         /// <returns></returns>
-        public List<T> Shuffle<T>(List<T> list)
+        private List<T> Shuffle<T>(List<T> list)
         {
             Random rng = new Random();
 
