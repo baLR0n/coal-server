@@ -27,7 +27,7 @@ namespace Tests
         [Test]
         public async Task TestReadPlayersAsync()
         {
-            List<Player> result = await this.reader.ReadPlayersAsync("C:\\pesdb");
+            List<Player> result = await this.reader.ReadPlayersAsync("..\\..\\..\\TestFiles");
 
             Assert.IsNotNull(result);
             Assert.IsTrue(result.Count > 0);
@@ -40,7 +40,7 @@ namespace Tests
         [Test]
         public async Task TestUpdatePlayerAsync()
         {
-            List<Player> result = await this.reader.ReadPlayersAsync("C:\\pesdb");
+            List<Player> result = await this.reader.ReadPlayersAsync("..\\..\\..\\TestFiles");
             Assert.IsNotNull(result);
             Assert.IsTrue(result.Count > 0);
 
@@ -48,12 +48,12 @@ namespace Tests
             string newName = "Random Name " + DateTime.Now.Millisecond.ToString();
             p.Name = newName;
 
-            var updateResult = await this.reader.UpdatePlayersAsync(new List<Player>() { p }, "C:\\pesdb");
+            var updateResult = await this.reader.UpdatePlayersAsync(new List<Player>() { p }, "..\\..\\..\\TestFiles");
 
             Assert.IsNotNull(updateResult);
 
             // Get players again
-            result = await this.reader.ReadPlayersAsync("C:\\pesdb");
+            result = await this.reader.ReadPlayersAsync("..\\..\\..\\TestFiles");
             Assert.IsNotNull(result);
             Assert.IsTrue(result.Count > 0);
 
@@ -69,7 +69,7 @@ namespace Tests
         [Test]
         public async Task TestReadClubsAsync()
         {
-            List<Club> result = await this.reader.ReadClubsAsync("C:\\pesdb");
+            List<Club> result = await this.reader.ReadClubsAsync("..\\..\\..\\TestFiles");
 
             Assert.IsNotNull(result);
             Assert.IsTrue(result.Count > 0);
@@ -82,7 +82,7 @@ namespace Tests
         [Test]
         public async Task TestReadPlayerAssignmentsAsync()
         {
-            List<TeamAssignment> result = await this.reader.ReadPlayerAssignmentsAsync("C:\\pesdb");
+            List<TeamAssignment> result = await this.reader.ReadPlayerAssignmentsAsync("..\\..\\..\\TestFiles");
 
             Assert.IsNotNull(result);
             Assert.IsTrue(result.Count > 0);
@@ -95,7 +95,7 @@ namespace Tests
         [Test]
         public async Task TestReadCompetitionsAsync()
         {
-            List<Competition> result = await this.reader.ReadCompetitionsAsync("C:\\pesdb");
+            List<Competition> result = await this.reader.ReadCompetitionsAsync("..\\..\\..\\TestFiles");
 
             Assert.IsNotNull(result);
             Assert.IsTrue(result.Count > 0);
@@ -108,7 +108,7 @@ namespace Tests
         [Test]
         public async Task TestReadCompetitionEntriesAsync()
         {
-            List<CompetitionEntry> result = await this.reader.ReadCompetitionEntriesAsync("C:\\pesdb");
+            List<CompetitionEntry> result = await this.reader.ReadCompetitionEntriesAsync("..\\..\\..\\TestFiles");
 
             Assert.IsNotNull(result);
             Assert.IsTrue(result.Count > 0);
